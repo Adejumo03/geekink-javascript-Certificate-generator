@@ -1,79 +1,87 @@
-// ==============================
-// SELECT ELEMENTS FROM HTML
-// ==============================
+const csvFileInput = document.getElementById("csvFile");
+const generateCSVBtn = document.getElementById("generateCSVBtn");
 
-// Inputs
-const studentNameInput = document.getElementById("studentName");
-const courseNameInput = document.getElementById("courseName");
-const dateInput = document.getElementById("date");
-
-// Buttons
-const generateBtn = document.getElementById("generateBtn");
-const downloadBtn = document.getElementById("downloadBtn");
-
-// Certificate preview container
 const certificate = document.getElementById("certificate");
 
-// Preview text elements
 const previewName = document.getElementById("previewName");
 const previewCourse = document.getElementById("previewCourse");
 const previewDate = document.getElementById("previewDate");
 
 
-// ==============================
-// GENERATE CERTIFICATE FUNCTION
-// ==============================
+generateCSVBtn.addEventListener("click", function () {
 
-generateBtn.addEventListener("click", function () {
+    const file = csvFileInput.files[0];
 
-  // Get values from inputs
-  const studentName = studentNameInput.value.trim();
-  const courseName = courseNameInput.value.trim();
-  const date = dateInput.value;
+    if (!file) {
+        alert("Please upload a CSV file first.");
+        return;
+    }
 
-  // Validate inputs
-  if (studentName === "" || courseName === "" || date === "") {
-    alert("Please fill all fields");
-    return;
-  }
+    const reader = new FileReader();
 
-  // Convert date to readable format
-  const formattedDate = new Date(date).toDateString();
+    reader.onload = function (event) {
 
-  // Update preview content
-  previewName.textContent = studentName;
-  previewCourse.textContent = courseName;
-  previewDate.textContent = formattedDate;
+        const csvData = event.target.result;
 
-  // Show certificate preview
-  certificate.classList.remove("hidden");
+        const rows = csvData.split("\n").slice(1);
 
-  // Show download button
-  downloadBtn.classList.remove("hidden");
+        generateCertificates(rows);
+
+    };
+
+    reader.readAsText(file);
+
 });
 
 
-// ==============================
-// DOWNLOAD CERTIFICATE FUNCTION
-// ==============================
+async function generateCertificates(rows) {
 
-downloadBtn.addEventListener("click", function () {
+    certificate.classList.remove("hidden");
 
-  // Use html2canvas to convert certificate to image
-  html2canvas(certificate).then(function(canvas) {
+    for (let i = 0; i < rows.length; i++) {
 
-    // Convert canvas to image
-    const image = canvas.toDataURL("image/png");
+        if (rows[i].trim() === "") continue;
 
-    // Create download link
+        const columns = rows[i].split(",");
+
+        const studentName = columns[0];
+        const courseName = columns[1];
+        const date = new Date(columns[2]).toDateString();
+
+        previewName.textContent = studentName;
+        previewCourse.textContent = courseName;
+        previewDate.textContent = date;
+
+        await wait(500);
+
+        const canvas = await html2canvas(certificate);
+
+        const image = canvas.toDataURL("image/png");
+
+        downloadImage(image, studentName);
+
+        await wait(500);
+
+    }
+
+}
+
+
+function downloadImage(image, studentName) {
+
     const link = document.createElement("a");
 
     link.href = image;
-    link.download = "GeekInk Certificate.png";
 
-    // Trigger download
+    link.download = studentName + " Certificate.png";
+
     link.click();
 
-  });
+}
 
-});
+
+function wait(ms) {
+
+    return new Promise(resolve => setTimeout(resolve, ms));
+
+}
